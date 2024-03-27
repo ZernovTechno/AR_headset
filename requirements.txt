@@ -1,0 +1,9 @@
+
+opencv-python
+mediapipe
+numpy
+Pillow
+cvzone
+multiprocessing
+dataclasses
+datetime
