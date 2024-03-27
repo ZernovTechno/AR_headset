@@ -13,7 +13,7 @@ You can use that for DIY AR/MR system.
 To start using the program you need to install the necessary libraries using pip *(Для начал установите зависимости через pip)*.
 
 I recommend using [Anaconda](https://www.anaconda.com/download) to manage packages *(Я рекомендую использовать Anaconda для управления пакетами)*.
-***
+
 With Anaconda installed, create environments: *(После установки Анаконды создайте окружение в ней)*
 ```no-highlight
 conda create -n ar_headset python=3.xx #(3.10 e.g.) 
