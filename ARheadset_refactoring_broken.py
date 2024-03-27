@@ -1,75 +1,96 @@
 import cv2
 import mediapipe as mp
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 from cvzone.SelfiSegmentationModule import SelfiSegmentation
 from multiprocessing import Process
 from dataclasses import dataclass, field
 import datetime
+import time
 
-# Utility function to check if a point is within a given region
+segmentor = SelfiSegmentation()
+
 def check_in_region(top_left, bottom_right, point):
-    x, y = point[1], point[2]
-    return top_left[0] <= x <= bottom_right[0] and top_left[1] <= y <= bottom_right[1]
+    if (point[2] > top_left[1]-20 and point[2] < bottom_right[1]+20 and point[1] > top_left[0]-20 and point[1] < bottom_right[0]+20):
+        return True
+    else:
+        return False
 
-# HandDetector class for detecting and drawing hands
-class HandDetector:
-    def __init__(self, max_hands=2, detection_confidence=0.5, tracking_confidence=0.5):
-        self.hands_detector = mp.solutions.hands.Hands(
-            max_num_hands=max_hands,
-            min_detection_confidence=detection_confidence,
-            min_tracking_confidence=tracking_confidence
-        )
+class HandDetector():
+    def __init__(self, mode=False, maxHands=2, modelComplex=1, detectionCon=0.5, trackCon=0.5):
+        self.mode = mode
+        self.maxHands = maxHands
+        self.modelComplex = modelComplex
+        self.detectionCon = detectionCon
+        self.trackCon = trackCon
+        self.mpHands = mp.solutions.hands
+        self.hands = self.mpHands.Hands(self.mode, self.maxHands, self.modelComplex, self.detectionCon, self.trackCon)
+        self.mpDraw = mp.solutions.drawing_utils
 
-    def find_hands(self, image, draw=False):
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        self.results = self.hands_detector.process(image_rgb)
-        if self.results.multi_hand_landmarks and draw:
-            for hand_landmarks in self.results.multi_hand_landmarks:
-                mp.solutions.drawing_utils.draw_landmarks(image, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS)
-        return image
-
-    def find_positions(self, image, hand_no=0):
-        lm_list = []
+    def findHands(self, img, draw=False):
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        self.results = self.hands.process(imgRGB)
         if self.results.multi_hand_landmarks:
-            hand = self.results.multi_hand_landmarks[hand_no]
-            for id, lm in enumerate(hand.landmark):
-                h, w, _ = image.shape
-                lm_list.append([id, int(lm.x * w), int(lm.y * h)])
-        return lm_list
+            for handLms in self.results.multi_hand_landmarks:
+                if draw:
+                    self.mpDraw.draw_landmarks(img, handLms, self.mpHands.HAND_CONNECTIONS)
+        return img
 
-    def __del__(self):
-        self.hands_detector.close()
+    def findPosition(self, img, handNo=0, draw=False):
+        lmList = []
+        if self.results.multi_hand_landmarks:
+            myHand = self.results.multi_hand_landmarks[handNo]
+            for id, lm in enumerate(myHand.landmark):
+                h, w, c = img.shape
+                cx, cy = int(lm.x * w), int(lm.y * h)
+                lmList.append([id, cx, cy])
+                if draw:
+                    cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
+        return lmList
 
-# GUIObject class for creating GUI elements
+detector = HandDetector()
+
 @dataclass
-class GUIObject:
-    active: bool = False
-    size: list = field(default_factory=lambda: [200, 100])
-    destination: list = field(default_factory=lambda: [400, 100])
-
-    def __post_init__(self):
+class GUIObject(): # Class interface object.
+    active: bool = None # Shows object on next draw
+    size: list = field(default_factory=list) # Size of created GUI object
+    destination: list = field(default_factory=list) # Destination of created GUI object
+    def __post_init__(self): # Post init function. Creates border and background by size param
         self.image = Image.new('RGBA', self.size, (255, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.image)
 
-# Function to create the GUI
-def create_gui(detector, fingers):
+clocks = GUIObject(True, size=[200, 100], destination=[400, 100])
+
+def create_GUI(fingers): # Make an interface overlay
+    if len(fingers) > 20:
+        controller(fingers)
+
     gui = Image.new('RGBA', (1024, 1024), (0, 0, 0, 0))
-    clocks = GUIObject(True, [200, 100], [400, 100])
-    clocks.__post_init__()
-    now = datetime.datetime.now()
-    date_str = now.strftime("%d-%m-%Y")
-    time_str = now.strftime("%H:%M")
-    clocks.draw.rounded_rectangle(((0, 0), clocks.size), 20, fill=(255, 255, 255, 230))
-    font_path = "sans-serif.ttf"
-    font_size = 30
-    try:
-        font = ImageFont.truetype(font_path, font_size)
-    except IOError:
-        font = ImageFont.load_default()
-    clocks.draw.text((60, 35), f"{date_str}\n{time_str}", (255, 255, 255), font=font)
+
+    if clocks.active:
+        clocks.__post_init__()
+        now = datetime.datetime.now()
+        time_str = now.strftime("%H:%M")
+        date_str = now.strftime("%d-%m-%Y")
+        clocks.draw.rounded_rectangle(((0, 0), clocks.size), 20, fill=(255, 255, 255, 230))
+        clocks.draw.text((50, 25), f"{date_str}\n{time_str}", (255, 255, 255), font=ImageFont.truetype("sans-serif.ttf", 30))
+    
     gui.paste(clocks.image, clocks.destination, clocks.image)
     return gui
+
+fingers_old = [0, 0, 0, 0]
+
+def controller(fingers): # Get fingers positions and check interface
+    big_finger_coordinates = fingers[4] # Большой палец (координаты)
+    index_finger_coordinates = fingers[8] # Указательный палец (координаты)
+    # ... (Дополнительная логика для других пальцев и взаимодействия с GUI)
+
+    # Example of interaction with GUI element
+    if check_in_region(clocks.destination, [clocks.destination[0] + clocks.size[0], clocks.destination[1] + clocks.size[1]], index_finger_coordinates):
+        # Logic to move the clocks or interact with it
+        pass
+
+    fingers_old = fingers
 
 # Function to process video stream
 def process_video_stream(stream_id, window_name):
@@ -88,11 +109,11 @@ def process_video_stream(stream_id, window_name):
 
         # Crop and process the image
         image = image[0:1024, 600:1770]
-        image = detector.find_hands(image, draw=True)
-        fingers = detector.find_positions(image)
+        image = detector.findHands(image, draw=True)
+        fingers = detector.findPosition(image)
 
         # Create and overlay the GUI
-        gui_image = create_gui(detector, fingers)
+        gui_image = create_GUI(fingers)
         final_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGBA))
         final_image.paste(gui_image, (0, 0), gui_image)
 
