@@ -58,6 +58,7 @@ for i, (name, proc) in enumerate(processes):
     process = threading.Thread(name=name, target=proc)
     process.start()
     processes[i].append(process)
+input()
 # gui_machine_process = processes[3][1]
 
 # while True:
