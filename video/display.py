@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from numba import njit, prange
 
+from video.camera import Camera
 from video.eyes import Eye, imshow_delay
 
 
@@ -21,10 +22,20 @@ def overlay_images(background, overlay, x, y):
                                                        inv_alpha * background[y + i, x + j, c])
 
     return background
-def compose_video(left:Eye, right:Eye):
-    print('Display job started')
-    while True:
-        full_frame = np.concatenate((left.frame, right.frame), axis=1)
-        cv2.imshow("full", full_frame)
-        if cv2.waitKey(imshow_delay) & 0xFF == ord('q'):
-            exit(0)
+
+
+class Display:
+    left: Eye
+    right: Eye
+
+    def __init__(self, camera: Camera):
+        self.left = Eye('left', camera)
+        self.right = Eye('right', camera)
+
+    def compose_video(self):
+        print('Display job started')
+        while True:
+            full_frame = np.concatenate((self.left.frame, self.right.frame), axis=1)
+            cv2.imshow("full", full_frame)
+            if cv2.waitKey(imshow_delay) & 0xFF == ord('q'):
+                exit(0)

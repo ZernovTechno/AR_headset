@@ -6,8 +6,8 @@ import gui
 import tracking_mp_opt
 from device_config import camera_size, screen_size
 from video.camera import Camera
-from video.display import compose_video
-from video.eyes import Eye
+from video.display import Display
+
 
 camera_width, camera_height = camera_size
 screen_width, screen_height = screen_size
@@ -43,26 +43,23 @@ def gui_job():
 detector = tracking_mp_opt.controller()
 camera = Camera()
 gui_machine = gui.GUI()
-right = Eye('right', camera)
-left = Eye('left', camera)
 
+
+display = Display(camera)
 
 # out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 25, (1480, 1440))
 
-def final_video():
-    compose_video(left, right)
 
-
-processes = [
-    ['re', right.job],
-    ['le', left.job],
-    ['camera', camera.run],
-    ['gui', gui_job],
-    ['display', final_video]
+threads = [
+    ['re', display.right.job, None],
+    ['le', display.left.job, None],
+    ['camera', camera.run, None],
+    ['gui', gui_job, None],
+    ['display', display.compose_video, None]
     # ["video", video_writer]
 ]
 
-for i, (name, proc) in enumerate(processes):
-    process = threading.Thread(name=name, target=proc)
-    process.start()
-    processes[i].append(process)
+for i, (name, proc, _) in enumerate(threads):
+    thread = threading.Thread(name=name, target=proc)
+    thread.start()
+    # threads[i][-1] = thread
