@@ -1,4 +1,8 @@
+import cv2
+import numpy as np
 from numba import njit, prange
+
+from video.eyes import Eye, imshow_delay
 
 
 @njit(parallel=True)
@@ -17,3 +21,10 @@ def overlay_images(background, overlay, x, y):
                                                        inv_alpha * background[y + i, x + j, c])
 
     return background
+def compose_video(left:Eye, right:Eye):
+    print('Display job started')
+    while True:
+        full_frame = np.concatenate((left.frame, right.frame), axis=1)
+        cv2.imshow("full", full_frame)
+        if cv2.waitKey(imshow_delay) & 0xFF == ord('q'):
+            exit(0)
