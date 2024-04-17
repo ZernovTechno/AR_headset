@@ -2,8 +2,14 @@ import cv2
 import numpy as np
 from numba import njit, prange
 
+from device_config import camera_size, imshow_delay, screen_size
+from gui.widget import Widget
+from tracking_mp_opt import controller
 from video.camera import Camera
-from video.eyes import Eye, imshow_delay
+
+camera_width, camera_height = camera_size
+
+camera_center = camera_width // 2
 
 
 @njit(parallel=True)
@@ -25,17 +31,42 @@ def overlay_images(background, overlay, x, y):
 
 
 class Display:
-    left: Eye
-    right: Eye
+    detector: controller
+    user_widgets: list[Widget]
+    system_widgets: list[Widget]
+    camera: Camera
 
-    def __init__(self, camera: Camera):
-        self.left = Eye('left', camera)
-        self.right = Eye('right', camera)
+    camera_frame: np.ndarray
+
+    def __init__(self, camera: Camera, detector: controller):
+        self.camera = camera
+        self.detector = detector
+        self.user_widgets = []
+        self.system_widgets = []
 
     def compose_video(self):
         print('Display job started')
         while True:
-            full_frame = np.concatenate((self.left.frame, self.right.frame), axis=1)
-            cv2.imshow("full", full_frame)
+            self.camera_frame = self.camera.frame
+
+            for widget in self.user_widgets:
+                overlay_images(self.camera_frame, widget.render(), 0, 0)
+
+            for widget in self.system_widgets:
+                overlay_images(self.camera_frame, widget.render(), 0, 0)
+
+            eye_width = camera_width//2
+
+            left = self.camera_frame[:, :eye_width]
+            right = self.camera_frame[:, -eye_width:]
+
+            full_frame = np.concatenate((left, right), axis=1)
+
+            final = cv2.resize(full_frame, screen_size)
+
+            cv2.imshow("full", final)
             if cv2.waitKey(imshow_delay) & 0xFF == ord('q'):
                 exit(0)
+
+    def add_widget(self, widget: Widget):
+        self.user_widgets.append(widget)
