@@ -1,10 +1,12 @@
+from typing import Any
+
 import cv2
 import numpy as np
 from numba import njit, prange
 
 from device_config import camera_size, imshow_delay, screen_size
-from gui.widget import Widget
-from tracking_mp_opt import controller
+from gui.abstract.widget import Widget
+# from tracking_mp_opt import controller
 from video.camera import Camera
 
 camera_width, camera_height = camera_size
@@ -31,22 +33,23 @@ def overlay_images(background, overlay, x, y):
 
 
 class Display:
-    detector: controller
+    detector: Any  #: controller
     user_widgets: list[Widget]
     system_widgets: list[Widget]
     camera: Camera
 
     camera_frame: np.ndarray
 
-    def __init__(self, camera: Camera, detector: controller):
+    def __init__(self, camera: Camera, detector):  #: controller
         self.camera = camera
         self.detector = detector
         self.user_widgets = []
         self.system_widgets = []
 
-    def compose_video(self):
+    def show_video(self):
         print('Display job started')
         while True:
+            self.camera.pull_frame()
             self.camera_frame = self.camera.frame
 
             for widget in self.user_widgets:
@@ -55,7 +58,7 @@ class Display:
             for widget in self.system_widgets:
                 overlay_images(self.camera_frame, widget.render(), 0, 0)
 
-            eye_width = camera_width//2
+            eye_width = camera_width // 2
 
             left = self.camera_frame[:, :eye_width]
             right = self.camera_frame[:, -eye_width:]

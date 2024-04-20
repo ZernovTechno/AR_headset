@@ -23,16 +23,16 @@ class Camera:
         self.stream = stream
         self.frame = np.zeros([camera_width, camera_height, 3], dtype=np.uint8)
 
-    def run(self):
+    def pull_frame(self):
+        success, actual_image = self.stream.read()
+
+        if not success:  # or not isinstance(actual_image, np.ndarray)
+            return
+
+        actual_image = actual_image[:, eye_shift:-eye_shift]
+        self.frame = actual_image
+
+    def job(self):
         print("Camera job started")
         while True:
-            success, actual_image = self.stream.read()
-
-            if not success or not isinstance(actual_image, np.ndarray):
-                continue
-
-            left_end = eye_shift
-            right_end = -eye_shift
-
-            actual_image = actual_image[:, left_end:right_end]
-            self.frame = actual_image
+            self.pull_frame()
