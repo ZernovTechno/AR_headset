@@ -5,7 +5,7 @@ import numpy as np
 from numba import njit, prange
 
 from device_config import camera_size, imshow_delay, screen_size
-from gui.abstract.widget import Widget
+from system import System
 # from tracking_mp_opt import controller
 from video.camera import Camera
 
@@ -34,17 +34,18 @@ def overlay_images(background, overlay, x, y):
 
 class Display:
     detector: Any  #: controller
-    user_widgets: list[Widget]
-    system_widgets: list[Widget]
     camera: Camera
-
+    system: System
     camera_frame: np.ndarray
 
-    def __init__(self, camera: Camera, detector):  #: controller
+    def __init__(self, camera: Camera, system: System):  #: controller
+        """
+
+        @rtype: object
+        """
         self.camera = camera
-        self.detector = detector
-        self.user_widgets = []
-        self.system_widgets = []
+        self.system = system
+        # self.detector = detector
 
     def show_video(self):
         print('Display job started')
@@ -52,11 +53,8 @@ class Display:
             self.camera.pull_frame()
             self.camera_frame = self.camera.frame
 
-            for widget in self.user_widgets:
-                overlay_images(self.camera_frame, widget.render(), 0, 0)
-
-            for widget in self.system_widgets:
-                overlay_images(self.camera_frame, widget.render(), 0, 0)
+            for widget in self.system.user_apps + self.system.system_apps:
+                overlay_images(self.camera_frame, widget.render(), widget.position[0], widget.position[1])
 
             eye_width = camera_width // 2
 
@@ -70,6 +68,3 @@ class Display:
             cv2.imshow("full", final)
             if cv2.waitKey(imshow_delay) & 0xFF == ord('q'):
                 exit(0)
-
-    def add_widget(self, widget: Widget):
-        self.user_widgets.append(widget)

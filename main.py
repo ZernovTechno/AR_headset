@@ -8,10 +8,7 @@ from device_config import camera_size, screen_size
 from widgets.fps import FPSCounter
 from video.camera import Camera
 from video.display import Display
-
-
-camera_width, camera_height = camera_size
-screen_width, screen_height = screen_size
+from headset import Headset
 
 # hand_image = np.zeros([screen_width // 2, screen_height, 4], dtype=np.uint8)
 # actual_image = np.zeros([screen_width // 2, screen_height, 3], dtype=np.uint8)
@@ -36,28 +33,10 @@ screen_width, screen_height = screen_size
 #         out.write(cv2.cvtColor(np.array(working_with), cv2.COLOR_BGR2RGB))
 
 # detector = tracking_mp_opt.controller()
-camera = Camera()
+
 # gui_machine = interface.GUI()
-
-
-display = Display(camera, None)
-display.add_widget(FPSCounter())
+device = Headset()
+device.system.register_app(FPSCounter())
+device.run()
 
 # out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 25, (1480, 1440))
-
-
-threads = [
-    # ['camera', camera.job, None],
-    # ['widgets', gui_job, None],
-    ['display', display.show_video, None]
-    # ["video", video_writer]
-]
-
-for i, (name, proc, _) in enumerate(threads):
-    thread = threading.Thread(name=name, target=proc)
-    thread.start()
-    threads[i][-1]=thread
-
-for name, routine, thread in threads:
-    thread.join()
-# display.show_video()
