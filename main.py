@@ -47,9 +47,7 @@ display.add_widget(FPSCounter())
 
 
 threads = [
-    # ['re', display.right.job, None],
-    # ['le', display.left.job, None],
-    # ['camera', camera.run, None],
+    # ['camera', camera.job, None],
     # ['widgets', gui_job, None],
     ['display', display.show_video, None]
     # ["video", video_writer]
@@ -58,3 +56,8 @@ threads = [
 for i, (name, proc, _) in enumerate(threads):
     thread = threading.Thread(name=name, target=proc)
     thread.start()
+    threads[i][-1]=thread
+
+for name, routine, thread in threads:
+    thread.join()
+# display.show_video()

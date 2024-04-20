@@ -6,9 +6,6 @@ from device_config import camera_size, eye_shift
 camera_width, camera_height = camera_size
 
 
-camera_center = camera_width // 2
-
-
 class Camera:
     """
     Camera view service
