@@ -11,6 +11,9 @@ class Widget:
     position: tuple[int, int]
     size: tuple[int, int]
 
+    def __init__(self):
+        self.position = (0, 0)
+
     @abstractmethod
     def render(self):
         """
