@@ -9,7 +9,7 @@ Biggest framerate you can get at this code is around 30, so you should use NASA 
 
 # Let's start!
 
-Before running this code you should install all dependency, so you can use (requirements)[requirements.txt] for that:
+Before running this code you should install all dependency, so you can use [requirements](requirements.txt) for that:
 
 ```pip
 $ pip install requirements.txt
