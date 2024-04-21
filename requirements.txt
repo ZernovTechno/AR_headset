@@ -1,0 +1,10 @@
+cvzone==1.6.1
+dataclasses-json==0.5.14
+imagezmq==1.1.1
+imutils==0.5.4
+matplotlib==3.8.3
+mediapipe==0.10.11
+numba==0.59.0
+numpy==1.26.4
+opencv-python==4.9.0.80
+pillow==10.3.0
