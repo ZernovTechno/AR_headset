@@ -1,11 +1,51 @@
+#######################################
+#      C O N F I G U R A T I O N      #
+#       К О Н Ф И Г У Р А Ц И Я       #
+#######################################
+
+#Set the type of camera(s)
+#Установите тип камер
+
+use_2_cameras = False
+use_2_cameras_height = 720
+use_2_cameras_width = 1280
+use_2_cameras_first = 0
+use_2_cameras_second = 1
+
+use_PS5_camera = True # PS5 HD Camera. 1920x1080 by eye. NEED DRIVER!!
+
+use_PS4_camera = False # PS4 stereo camera. 1280x720 by eye. NEED DRIVER!!
+
+#Choose a tracking module. The fastest now is "tracking_mp_opt"
+#Выберите модуль трекинга. Самый быстрый на данный момент - "tracking_mp_opt"
+
+import tracking_mp_opt #Fast
+# import tracking_cvzone #Medium
+# import tracking_v1 #Slow
+
+#Run or not videorecorder?
+#Запускать видеозапись или нет?
+active_recording = False
+
+#Turn the GUI on?
+#Запускать GUI?
+active_gui = True
+
+
+###################################################
+#            M A I N   S O F T W A R E            #
+#  П Р О Г Р А М М Н О Е   О Б Е С П Е Ч Е Н И Е  #
+###################################################
+
+
 import cv2
 import threading
 import numpy as np
 import time
-import tracking_mp_opt
-import gui
 from PIL import Image
 from numba import njit, prange
+
+import gui
 
 
 hand_image = np.zeros([1480,1440,4],dtype=np.uint8)
@@ -108,26 +148,54 @@ gui_machine = gui.gui_machine()
 out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 25, (1480,1440))
 
 if __name__ == '__main__': # Точка входа
-    stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    stream.set(cv2.CAP_PROP_FRAME_WIDTH, 3840) # Ширина кадров в видеопотоке.
-    stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080) # Высота кадров в видеопотоке.
+    if use_PS5_camera:
+        stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        stream.set(cv2.CAP_PROP_FRAME_WIDTH, 3840) # Ширина кадров в видеопотоке.
+        stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080) # Высота кадров в видеопотоке.
+
+    elif use_2_cameras:
+        stream = cv2.VideoCapture(use_2_cameras_first, cv2.CAP_DSHOW) # Левая камера
+        stream.set(cv2.CAP_PROP_FRAME_WIDTH, use_2_cameras_width) # Ширина кадров в видеопотоке.
+        stream.set(cv2.CAP_PROP_FRAME_HEIGHT, use_2_cameras_height) # Высота кадров в видеопотоке.
+        stream1 = cv2.VideoCapture(use_2_cameras_second, cv2.CAP_DSHOW) # Правая камера
+        stream1.set(cv2.CAP_PROP_FRAME_WIDTH, use_2_cameras_width) # Ширина кадров в видеопотоке.
+        stream1.set(cv2.CAP_PROP_FRAME_HEIGHT, use_2_cameras_height) # Высота кадров в видеопотоке.
+
+    elif use_PS4_camera:
+        stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        stream.set(cv2.CAP_PROP_FRAME_WIDTH, 2*1280) # Ширина кадров в видеопотоке.
+        stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 800) # Высота кадров в видеопотоке.
+
     right_process = threading.Thread(name='right_eye', target=eyes_class.work_right) # Точка запуска потока правого глаза.
     left_process = threading.Thread(name='left_eye', target=eyes_class.work_left)
-    gui_machine_process = threading.Thread(name='gui', target=gui_driver)
-    videowriter = threading.Thread(name='video', target=video_writer)
     right_process.start()
     left_process.start()
-    gui_machine_process.start()
-    videowriter.start()
+    if active_recording:
+        videowriter = threading.Thread(name='video', target=video_writer)
+        videowriter.start()
+    if active_gui:
+        gui_machine_process = threading.Thread(name='gui', target=gui_driver)
+        gui_machine_process.start()
+
     while True:
-        success, actual_image = stream.read()
-        #right_actual_image = actual_image[:1080, 600:1770]
-        #left_actual_image = actual_image[:1080, 1920+300:1920+1470]
+        if use_2_cameras:
+            success, left_actual_image = stream.read()
+            success, right_actual_image = stream1.read()
+        else:
+            success, actual_image = stream.read()
+
         if (success):
-            right_actual_image = cv2.resize(actual_image[:1080, 600:1920], (1480, 1440))
-            left_actual_image= cv2.resize(actual_image[:1080, 2320:3840], (1480, 1440))
+            if use_2_cameras:
+                right_actual_image = cv2.resize(right_actual_image, (1480, 1440))
+                left_actual_image= cv2.resize(left_actual_image, (1480, 1440))
+            else:
+                right_actual_image = cv2.resize(actual_image[:actual_image.shape[1], actual_image.shape[0]//6:actual_image.shape[0]//2], (1480, 1440))
+                left_actual_image= cv2.resize(actual_image[:actual_image.shape[1], actual_image.shape[0]//6*4:actual_image.shape[0]], (1480, 1440))
         else:
             cv2.putText(left_actual_image, "NO IMAGE", (350, 512), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 255), 3, cv2.LINE_AA)
             cv2.putText(right_actual_image, "NO IMAGE", (350, 512), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 255), 3, cv2.LINE_AA)
+
+
+
         if(not gui_machine_process.is_alive):
             gui_machine_process.start()
