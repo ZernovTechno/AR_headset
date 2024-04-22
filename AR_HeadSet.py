@@ -12,16 +12,16 @@ use_2_cameras_width = 1280
 use_2_cameras_first = 0
 use_2_cameras_second = 1
 
-use_PS5_camera = True # PS5 HD Camera. 1920x1080 by eye. NEED DRIVER!!
+use_PS5_camera = True # PS5 HD Camera. 1280x1080 by eye (Resize from 1920x1080). NEED DRIVER!!
 
 use_PS4_camera = False # PS4 stereo camera. 1280x720 by eye. NEED DRIVER!!
 
 #Choose a tracking module. The fastest now is "tracking_mp_opt"
 #Выберите модуль трекинга. Самый быстрый на данный момент - "tracking_mp_opt"
 
-import tracking_mp_opt #Fast
-# import tracking_cvzone #Medium
-# import tracking_v1 #Slow
+import tracking_mp_opt as tracking #Fast
+# import tracking_cvzone as tracking #Medium
+# import tracking_v1 as tracking #Slow
 
 #Run or not videorecorder?
 #Запускать видеозапись или нет?
@@ -142,7 +142,7 @@ def video_writer():
         working_with.paste(gui_image, (0, 0), gui_image)
         out.write(cv2.cvtColor(np.array(working_with), cv2.COLOR_BGR2RGB))
 
-detector = tracking_mp_opt.controller()
+detector = tracking.controller()
 eyes_class = eyes()
 gui_machine = gui.gui_machine()
 out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 25, (1480,1440))
