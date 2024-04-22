@@ -58,11 +58,11 @@ Thats all.
 
 After setting up all configuration variables you can check your webcam(s) and directly run this code:
 ```python
-python3 AR_HeadSet.py
+$ python3 AR_HeadSet.py
 ```
 or
 ```python
-py AR_HeadSet.py
+$ py AR_HeadSet.py
 ```
 
 ## The end 
