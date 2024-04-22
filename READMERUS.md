@@ -1,6 +1,6 @@
 # AR_headset
 ## Разработчик - [Zernov](https://www.youtube.com/@zernovtech)
-[README.md на английском](./README.md)
+[README.md on english](./README.md)
 
 ## Предисловие
 Хэй! Это мой код для создания AR/MR шлема (дополненная реальность) на базе Python и Linux. В Python используется MediaPipe (трекинг рук) и OpenCV для видеопотоков.
