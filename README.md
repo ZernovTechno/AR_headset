@@ -4,8 +4,8 @@
 
 ## About
 Hey! This is my own code for creating an AR/MR helmet based on Linux and Python. This thing uses MediaPipe and Cv2 for video streams.
-I started it only something like 2 month ago, so it's not so good
-Biggest framerate you can get at this code is around 30, so you should use NASA supercomputer, I think.
+I started it only something like 2 months ago, so ain't so good
+Biggest framerate you can get with this code is around 30, so you should use NASA supercomputer.
 
 # Let's begin!
 
