@@ -12,8 +12,8 @@ Biggest framerate you can get at this code is around 30, so you should use NASA 
 (Be sure you are using Python 3.11)
 Before running this code you should install all dependency, so you can use [requirements](requirements.txt) for that:
 
-```pip
-$ pip install -r requirements.txt
+```console
+pip install -r requirements.txt
 ```
 
 ## Configuration
