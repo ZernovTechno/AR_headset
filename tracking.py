@@ -48,7 +48,7 @@ class controller():
         b, g, r = cv2.split(src)
         rgba = [b,g,r, alpha]
         dst = cv2.merge(rgba,4)
-        return dst
+        return dst, dst
 
     def find_and_get_hands(self):
         img_hands = cropimgwithoutbg
@@ -56,6 +56,7 @@ class controller():
         fingers = self.findPosition(img_hands)
         minx = 0
         miny = 0
+        lmList = [0]
         if (len(fingers) >= 20):
             xlist = [0]
             ylist = [0]
@@ -74,6 +75,6 @@ class controller():
             if (miny <= 0): miny = 1
 
             cropimg = cropimgwithoutbg[miny:maxy, minx:maxx]
-            cropimgwithoutbg = self.remove_background(cropimg)    
-            hand_image = Image.fromarray(cv2.cvtColor(cropimgwithoutbg, cv2.COLOR_BGRA2RGBA))
-        return hand_image
+            cropimgwithoutbg, mask = self.remove_background(cropimg)    
+            hand_image = cropimgwithoutbg
+        return hand_image, lmList, miny, minx, maxy, maxx, mask
