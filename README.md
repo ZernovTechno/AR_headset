@@ -73,4 +73,15 @@ or
 python3 AR_HeadSet.py
 ```
 
+## Check the video
+
+After starting code up you can check videostream by opening 
+```http
+yourip:5000
+```
+for example:
+```http
+localhost:5000
+```
+Then you should see stream from camera and GUI
 ## The end 
