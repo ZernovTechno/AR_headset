@@ -6,7 +6,7 @@
 #Set the type of camera(s)
 #Установите тип камер
 
-use_1_camera = True
+use_1_camera = False
 use_1_cameras_width = 1280
 use_1_cameras_height = 720
 
@@ -16,7 +16,7 @@ use_2_cameras_height = 720
 use_2_cameras_first = 0
 use_2_cameras_second = 1
 
-use_PS5_camera = False # PS5 HD Camera. 1280x1080 by eye (Resize from 1920x1080). NEED DRIVER!!
+use_PS5_camera = True # PS5 HD Camera. 1280x1080 by eye (Resize from 1920x1080). NEED DRIVER!!
 
 use_PS4_camera = False # PS4 stereo camera. 1280x720 by eye. NEED DRIVER!!
 
@@ -25,11 +25,11 @@ use_PS4_camera = False # PS4 stereo camera. 1280x720 by eye. NEED DRIVER!!
 
 import tracking_mp_opt as tracking #Fast
 # import tracking_cvzone as tracking #Medium
-# import tracking_v1 as tracking #Slow
+# import tracking as tracking #Slow
 
 #Run or not videorecorder?
 #Запускать видеозапись или нет?
-active_recording = True
+active_recording = False
 
 #Turn the GUI on?
 #Запускать GUI?
@@ -51,7 +51,7 @@ import threading
 import numpy as np
 import time
 from PIL import Image
-from numba import njit, prange
+import io
 
 import gui as gui
 from flask import Flask, render_template, Response
@@ -71,52 +71,33 @@ right_postprocess_image = np.zeros([1480,1440,3],dtype=np.uint8)
 
 fingers = [0]
 
-@njit(parallel=True)
-def overlay_images(background, overlay, x, y):
-    y_end = y + overlay.shape[0]
-    x_end = x + overlay.shape[1]
-
-    for i in prange(overlay.shape[0]):
-        for j in prange(overlay.shape[1]):
-            if overlay[i, j, 3] != 0:  # Check if the alpha channel is not transparent
-                if 0 <= y + i < background.shape[0] and 0 <= x + j < background.shape[1]:
-                    alpha = overlay[i, j, 3] / 255.0
-                    inv_alpha = 1.0 - alpha
-                    for c in range(3):
-                        background[y + i, x + j, c] = (alpha * overlay[i, j, c] +
-                                                      inv_alpha * background[y + i, x + j, c])
-
-    return background
-
 def gui_driver():
     global fingers
     global gui_image
     print("Interface go, because stat: " + str(active_gui))
     while True:
-        try:
-            gui_image = gui_machine.create_GUI(fingers)
+        #try:
+        #gui_image = cv2.cvtColor(np.array(gui_machine.create_GUI(fingers)), cv2.COLOR_BGRA2RGBA)
+        gui_image = gui_machine.create_GUI(fingers)
             #cv2.imshow("Eye: GUI", gui_image)
             #if cv2.waitKey(1) & 0xFF == ord('q'):
             #    exit(0)
-        except:
-            print("GUI DRIVER FAILED!")
-            pass
+        #except:
+        #    cv2.putText(gui_image, "Gui Failed.", (350, 100), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255, 255), 3, cv2.LINE_AA)
+        #    #pass
         
 def gen_frames():  # generate frame by frame from camera
     global right_postprocess_image
     global left_postprocess_image
+    backgrnd = Image.new('RGB', (2960, 1440), (0,0,0))
     while True:
-        img1 = left_postprocess_image
-        img2 = right_postprocess_image
-        h1, w1 = img1.shape[:2]
-        h2, w2 = img2.shape[:2]
+        
+        backgrnd.paste(left_postprocess_image, (0, 0), left_postprocess_image)
+        backgrnd.paste(right_postprocess_image, (1480, 0), right_postprocess_image)
 
-        vis = np.zeros((max(h1, h2), w1+w2,3), np.uint8)
-
-        vis[:h1, :w1,:3] = img1
-        vis[:h2, w1:w1+w2,:3] = img2
-        ret, buffer = cv2.imencode('.jpg', vis)
-        frame = buffer.tobytes()
+        img_byte_arr = io.BytesIO()
+        backgrnd.save(img_byte_arr, format='jpeg')
+        frame = img_byte_arr.getvalue()
         yield (b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
@@ -133,12 +114,17 @@ miny = 0
 maxx = 0
 maxy = 0
 
+left = False
+right = True
+
 def work_right():
     global right_postprocess_image
     global minx
     global miny
     global maxx
     global maxy
+    global left
+    global right
     global fingers
     prev_frame_time = 0
     new_frame_time = 0
@@ -146,20 +132,21 @@ def work_right():
         working_with = right_actual_image.copy()
         new_frame_time = time.time() 
         if len(fingers) > 0:
-            hands, mask = detector.remove_background(working_with[miny:maxy, minx-200:maxx])
+            hands, mask = detector.remove_background(working_with[miny:maxy, minx-220:maxx])
         fps = 1/(new_frame_time-prev_frame_time) 
         prev_frame_time = new_frame_time 
         fps = int(fps) 
         fps = str(fps) 
         cv2.putText(working_with, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA) 
-        if active_gui: working_with = overlay_images(working_with, cv2.cvtColor(np.array(gui_image), cv2.COLOR_BGRA2RGBA), -200, 0)
+        working_with = Image.fromarray(cv2.cvtColor(working_with, cv2.COLOR_BGRA2RGBA))
+        if active_gui: working_with.paste(gui_image, (0-200,0), gui_image)
         if len(fingers) > 0:
-            working_with = overlay_images(working_with, hands, minx-200, miny)
-
+            try:
+                hands = Image.fromarray(cv2.cvtColor(hands, cv2.COLOR_BGRA2RGBA))
+                working_with.paste(hands, (minx-220,miny), hands)
+            except:
+                pass
         right_postprocess_image = working_with
-        cv2.imshow("Eye: RIGHT", working_with)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            exit(0)
 
 def work_left():
     global left_postprocess_image
@@ -168,6 +155,8 @@ def work_left():
     global miny
     global maxx
     global maxy
+    global left
+    global right
     prev_frame_time = 0
     new_frame_time = 0
     while True:
@@ -179,24 +168,23 @@ def work_left():
         fps = int(fps) 
         fps = str(fps) 
         cv2.putText(working_with, fps, (7, 70), font, 3, (100, 255, 0), 3, cv2.LINE_AA) 
-        if active_gui: working_with = overlay_images(working_with, cv2.cvtColor(np.array(gui_image), cv2.COLOR_BGRA2RGBA), 0,0)
+        working_with = Image.fromarray(cv2.cvtColor(working_with, cv2.COLOR_BGRA2RGBA))
+        if active_gui: working_with.paste(gui_image, (0,0), gui_image)
         if len(fingers) > 0:
-            working_with = overlay_images(working_with, hands, minx, miny)
- 
+            hands = Image.fromarray(cv2.cvtColor(hands, cv2.COLOR_BGRA2RGBA))
+            working_with.paste(hands, (minx,miny), hands)
         left_postprocess_image = working_with
-        cv2.imshow("Eye: LEFT", working_with)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            exit(0)
 
 def video_writer():
+    global right_postprocess_image
     print("Videowriter go, because stat: " + str(active_recording))
+    out = cv2.VideoWriter("saves/recording/recording_" + time.strftime("%d.%m.%Y_%H.%M.%S", time.localtime()) + ".avi",cv2.VideoWriter_fourcc(*"MJPG"), 25, (1480,1440))
     while True:
-        out.write(right_postprocess_image)
+        out.write(np.array(cv2.cvtColor(np.array(right_postprocess_image), cv2.COLOR_RGB2BGR)))
 
 detector = tracking.controller()
-gui_machine = gui.gui_machine()
-out = cv2.VideoWriter("Recording_" + time.strftime("%d.%m.%Y_%H.%M.%S", time.localtime()) + ".avi",cv2.VideoWriter_fourcc(*"MJPG"), 25, (1480,1440))
-                      
+gui_machine = gui.gui_machine() 
+
 if __name__ == '__main__': # Точка входа
     if use_PS5_camera:
         stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -239,6 +227,7 @@ if __name__ == '__main__': # Точка входа
             success, right_actual_image = stream1.read()
         else:
             success, actual_image = stream.read()
+
         actual_image = cv2.rotate(actual_image, cv2.ROTATE_180)
 
         if (success):
@@ -253,4 +242,4 @@ if __name__ == '__main__': # Точка входа
                 left_actual_image= cv2.resize(actual_image[:actual_image.shape[0], actual_image.shape[1]//6*4:actual_image.shape[1]], (1480, 1440))
         else:
             cv2.putText(left_actual_image, "NO IMAGE", (350, 512), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 255), 3, cv2.LINE_AA)
-            cv2.putText(right_actual_image, "NO IMAGE", (350, 512), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 255), 3, cv2.LINE_AA)
+            cv2.putText(right_actual_image, "NO IMAGE", (150, 512), cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 255), 3, cv2.LINE_AA)
