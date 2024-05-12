@@ -4,6 +4,7 @@ import numpy as np
 from cvzone.SelfiSegmentationModule import SelfiSegmentation
 
 mp_hands = mp.solutions.hands
+
 hands = mp_hands.Hands(static_image_mode=False,
                        max_num_hands=1,
                        min_detection_confidence=0.5,
@@ -12,11 +13,12 @@ mp_draw = mp.solutions.drawing_utils
 
 segmentor = SelfiSegmentation()
 class controller():
+    
     def remove_background(self,img):
         try:
             gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     
-            _, mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) 
+            _, mask = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU) 
             mask = cv2.bitwise_not(mask)
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
 
@@ -47,10 +49,10 @@ class controller():
             xlist = lmArray[:, 1]
             ylist = lmArray[:, 2]
 
-            minx = np.clip(np.min(xlist) - 40, 1, None)
-            maxx = np.clip(np.max(xlist) + 40, 1, None)
-            miny = np.clip(np.min(ylist) - 40, 1, None)
-            maxy = np.clip(np.max(ylist) + 40, 1, None)
+            minx = np.clip(np.min(xlist) - 30, 1, None)
+            maxx = np.clip(np.max(xlist) + 30, 1, None)
+            miny = np.clip(np.min(ylist) - 30, 1, None)
+            maxy = np.clip(np.max(ylist) + 30, 1, None)
 
             image = image[miny:maxy, minx:maxx]
             image, mask = self.remove_background(image)
