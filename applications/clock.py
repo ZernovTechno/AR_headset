@@ -6,8 +6,8 @@ import datetime
 class pane():
     """Тип данных объект интерфейса"""
     active: bool = None # Shows object on next draw
-    size: int = (300, 150) # Размер (Не более 1440x1480)
-    destination: int = (500, 500) # Расположение на экране (координата на пространстве 1440x1480)
+    size: tuple[int, int] = (300, 150) # Размер (Не более 1440x1480)
+    destination: tuple[int, int] = (500, 500) # Расположение на экране (координата на пространстве 1440x1480)
     def main(self):
         self.image = Image.new('RGBA', self.size, (0, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.image)

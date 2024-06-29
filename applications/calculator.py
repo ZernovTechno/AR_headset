@@ -11,8 +11,8 @@ def create_button(draw, coord, text, fill=(200, 200, 200, 230)):
 class calc():
     """Тип данных объект интерфейса"""
     active: bool = None # Shows object on next draw
-    size: int = (300, 400) # Размер (Не более 1440x1480)
-    destination: int = (500, 500) # Расположение на экране (координата на пространстве 1440x1480)
+    size: tuple[int, int] = (300, 400) # Размер (Не более 1440x1480)
+    destination: tuple[int, int] = (500, 500) # Расположение на экране (координата на пространстве 1440x1480)
     def main(self):
         self.icon = Image.open('applications/resources/calculator.png')
         self.image = Image.new('RGBA', self.size, (0, 0, 0, 0))
