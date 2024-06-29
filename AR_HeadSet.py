@@ -166,6 +166,7 @@ def work_right():
         if active_gui:
             working_with.paste(gui_image, (-200, 0), gui_image)
         if len(fingers) > 0:
+            # noinspection PyUnboundLocalVariable
             working_with.paste(hands, (min_x - 220, min_y), hands)
         # fps = int(fps)
         # fps = str(fps)
