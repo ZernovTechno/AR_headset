@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 class right_panel():
     """Тип данных объект интерфейса"""
     active: bool = None # Shows object on next draw
-    size: int = (90, 400) # Размер (Не более 1440x1480)
-    destination: int = (900, 500) # Расположение на экране (координата на пространстве 1440x1480)
+    size: tuple[int, int] = (90, 400) # Размер (Не более 1440x1480)
+    destination: tuple[int, int] = (900, 500) # Расположение на экране (координата на пространстве 1440x1480)
     def main(self):
         self.image = Image.new('RGBA', self.size, (0, 0, 0, 0))
         self.draw = ImageDraw.Draw(self.image)

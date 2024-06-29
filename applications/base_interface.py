@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 class right_panel():
     """Тип данных объект интерфейса"""
     active: bool = None # Shows object on next draw
-    size: int = (90, 400)
-    destination: int = (1300, 500)
+    size: tuple[int, int] = (90, 400)
+    destination: tuple[int, int] = (1300, 500)
     button_timer: int = 0
     def check_in_region(self, top_left, bottom_right, point):
         if (point[1] > top_left[1] and point[1] < bottom_right[1] and point[0] > top_left[0] and point[0] < bottom_right[0]): # Check if point coordinates inside the region

@@ -12,8 +12,8 @@ def check_in_region(top_left, bottom_right, point):
 class pane():
     """Тип данных объект интерфейса"""
     active: bool = None # Shows object on next draw
-    size: int = (640, 480) # Размер (Не более 1440x1480)
-    destination: int = (400, 500) # Расположение на экране (координата на пространстве 1440x1480)
+    size: tuple[int, int] = (640, 480) # Размер (Не более 1440x1480)
+    destination: tuple[int, int] = (400, 500) # Расположение на экране (координата на пространстве 1440x1480)
     button_timer: int = 0
     selected_color: list = (0,0,0,255)
     def __init__(self, active):
