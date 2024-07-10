@@ -96,7 +96,7 @@ class gui_machine():
         self.left_gui.paste(gui, (0+self.calculated_x-self.plus_pixels_by_x,0), gui)
         self.right_gui.paste(gui, (0-self.calculated_x-self.plus_pixels_by_x,0), gui)
         
-        if (eval(config["Options"]["barrel_distortion"])):
+        if config["Options"]["barrel_distortion"] == "True":
             return cv2.cvtColor(np.array(self.left_gui), cv2.COLOR_BGRA2RGB), cv2.cvtColor(np.array(self.right_gui), cv2.COLOR_BGRA2RGB)
         else:
             return self.left_gui, self.right_gui

@@ -25,7 +25,7 @@ detector = tracking.controller()
 gui_machine = gui.gui_machine() 
 
 config.read("config.ini")  # читаем конфиг
-if (eval(config["Options"]["barrel_distortion"])):
+if config["Options"]["barrel_distortion"] == "True":
     right_postprocess_image = np.zeros([1440,1440,3],dtype=np.uint8)
     left_postprocess_image = np.zeros([1440,1440,3],dtype=np.uint8)
     right_gui_image = np.zeros([1440,1440,3],dtype=np.uint8)
@@ -81,15 +81,17 @@ def logger(text, mess_lvl = "Undefined"):
 
 def gui_driver():
     global left_gui_image, right_gui_image, right_postprocess_image, xdegrees,fingers, miny, minx, maxy, maxx, distance
-    logger("GUI запущен. Состояние из файла конфигурации: " + str(eval(config["Options"]["active_interface"])), "Debug")
-    if (eval(config["Options"]["video_recording"])): out = cv2.VideoWriter("saves/recording/recording_" + time.strftime("%d.%m.%Y_%H.%M.%S", time.localtime()) + ".avi", cv2.VideoWriter_fourcc(*'DIVX'), 15, (1440,1440))
+    logger("GUI запущен. Состояние из файла конфигурации: " + config["Options"]["active_interface"], "Debug")
+    if config["Options"]["video_recording"]=="True":
+        out = cv2.VideoWriter("saves/recording/recording_" + time.strftime("%d.%m.%Y_%H.%M.%S", time.localtime()) + ".avi", cv2.VideoWriter_fourcc(*'DIVX'), 15, (1440,1440))
     while True:
         if (TurnOff):
             out.release()
             exit()
         fingers, miny, minx, maxy, maxx, distance = detector.find_and_get_hands(left_actual_image)
         left_gui_image, right_gui_image = gui_machine.create_GUI(fingers, distance, xdegrees, config)
-        if (eval(config["Options"]["video_recording"])): out.write(right_postprocess_image)
+        if config["Options"]["video_recording"] == "True":
+            out.write(right_postprocess_image)
         
 def gen_frames():  # generate frame by frame from camera
     global right_postprocess_image
@@ -99,7 +101,7 @@ def gen_frames():  # generate frame by frame from camera
         if (TurnOff):
             exit()
         dbe = int(config["Customize"]["distance_between_eyes"])
-        if (eval(config["Options"]["barrel_distortion"])):
+        if config["Options"]["barrel_distortion"]=="True":
             backgrnd.paste(Image.fromarray(cv2.cvtColor(left_postprocess_image, cv2.COLOR_BGR2RGB)), (0 + abs(dbe-40), 0))
             backgrnd.paste(Image.fromarray(cv2.cvtColor(right_postprocess_image, cv2.COLOR_BGR2RGB)), (1440+ dbe, 0))
         else:
@@ -122,7 +124,7 @@ def work_right():
     while True:
         if (TurnOff):
             exit()
-        if (eval(config["Options"]["barrel_distortion"])):
+        if config["Options"]["barrel_distortion"] == "True":
             right_postprocess_image = cv2.undistort(cv2.addWeighted(right_gui_image, 0.6, right_actual_image, 0.6, 0),cam,distCoeff)
         else:
             working_with = Image.fromarray(cv2.cvtColor(right_actual_image, cv2.COLOR_BGR2RGB))
@@ -136,7 +138,7 @@ def work_left():
         if (TurnOff):
             exit()
         #left_postprocess_image = distort(np.where(left_gui_image[..., 2][..., None] > 0, left_gui_image, left_actual_image))
-        if (eval(config["Options"]["barrel_distortion"])):
+        if config["Options"]["barrel_distortion"] == "True":
             left_postprocess_image = cv2.undistort(cv2.addWeighted(left_gui_image, 0.6, left_actual_image, 0.6, 0),cam,distCoeff)
         else:
             working_with = Image.fromarray(cv2.cvtColor(left_actual_image, cv2.COLOR_BGR2RGB))
@@ -178,11 +180,11 @@ if __name__ == '__main__': # Точка входа
             logger("Никакая камера не выбрана.", "Debug")
             stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-    if eval(config["Options"]["active_interface"]):
+    if config["Options"]["active_interface"] == "True":
         logger("Попытка запуска потока интерфейса.", "Debug")
         threading.Thread(name='gui', target=gui_driver).start()
     
-    if eval(config["Options"]["webserver_active"]):
+    if config["Options"]["webserver_active"] == "True":
         logger("Попытка запуска потока ВЕБ-сервера.", "Debug")
         threading.Thread(target=lambda: app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)).start()
 
@@ -199,7 +201,8 @@ if __name__ == '__main__': # Точка входа
                 success, right_actual_image = stream1.read()
             case _:
                 success, actual_image = stream.read()
-        if (eval(config["Camera"]["rotate_image"])): actual_image = cv2.rotate(actual_image, cv2.ROTATE_180)
+        if config["Camera"]["rotate_image"] == "True":
+            actual_image = cv2.rotate(actual_image, cv2.ROTATE_180)
         if (success and config["Camera"]["mode"] != "camera_off"):
             match camera_mode:
                 case "2camera":
